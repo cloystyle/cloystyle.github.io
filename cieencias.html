@@ -206,11 +206,15 @@ p {
             </div>
         </div>
 
-        <div id="results-container">
-            <h2>Resultados</h2>
-            <div class="score-circle" id="final-score">0</div>
-            <p><span id="correct-count">0</span> / <span id="total-count">0</span></p>
-        </div>
+<div id="results-container">
+    <h2>Resultados</h2>
+    <div class="score-circle" id="final-score">0</div>
+    <p><span id="correct-count">0</span> / <span id="total-count">0</span></p>
+
+    <button class="next-btn" onclick="resetQuiz(); showQuestion();">
+        Reintentar
+    </button>
+</div>
     </div>
 </div>
 
@@ -238,7 +242,10 @@ function showContent(tab) {
     document.getElementById(tab).classList.add('active');
     event.target.classList.add('active');
 
-    if (tab === 'quiz') showQuestion();
+    if (tab === 'quiz') {
+        resetQuiz();
+        showQuestion();
+    }
 }
 
 function showQuestion() {
@@ -252,17 +259,38 @@ function showQuestion() {
         const div = document.createElement("div");
         div.className = "option";
         div.textContent = opt;
-        div.onclick = () => check(opt);
+        div.onclick = () => check(opt, div);
         container.appendChild(div);
     });
 }
 
-function check(selected) {
+function check(selected, element) {
     const q = questions[current];
 
-    if (selected === q.answer) correct++;
+    const options = document.querySelectorAll(".option");
+    options.forEach(o => o.onclick = null);
 
-    document.getElementById("feedback-panel").style.display = "block";
+    const feedback = document.getElementById("feedback-panel");
+    const status = document.getElementById("feedback-status");
+
+    feedback.style.display = "block";
+
+    if (selected === q.answer) {
+        status.textContent = "Correcto";
+        status.style.color = "#22c55e";
+        element.style.borderColor = "#22c55e";
+        correct++;
+    } else {
+        status.textContent = "Incorrecto";
+        status.style.color = "#ef4444";
+        element.style.borderColor = "#ef4444";
+
+        options.forEach(o => {
+            if (o.textContent === q.answer) {
+                o.style.borderColor = "#22c55e";
+            }
+        });
+    }
 }
 
 function handleNext() {
@@ -272,10 +300,27 @@ function handleNext() {
     if (current < questions.length) {
         showQuestion();
     } else {
-        document.getElementById("quiz-container").style.display = "none";
-        document.getElementById("results-container").style.display = "block";
-        document.getElementById("final-score").textContent = Math.round((correct / questions.length) * 100);
+        showResults();
     }
+}
+
+function showResults() {
+    document.getElementById("quiz-container").style.display = "none";
+    document.getElementById("results-container").style.display = "block";
+
+    document.getElementById("final-score").textContent =
+        Math.round((correct / questions.length) * 100);
+
+    document.getElementById("correct-count").textContent = correct;
+    document.getElementById("total-count").textContent = questions.length;
+}
+
+function resetQuiz() {
+    current = 0;
+    correct = 0;
+
+    document.getElementById("quiz-container").style.display = "block";
+    document.getElementById("results-container").style.display = "none";
 }
 </script>
 
