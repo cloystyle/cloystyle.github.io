@@ -1,47 +1,35 @@
-<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Texture Editor</title>
+<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-body{margin:0;background:#1d1b2e;color:#fff;font-family:Arial;display:flex;flex-direction:column;align-items:center}
-#tools{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:10px}
-button,input{padding:8px;border-radius:8px;border:none}
-canvas{image-rendering:pixelated;width:min(90vw,512px);height:min(90vw,512px);border:2px solid #8a4fff;background:#fff;touch-action:none}
+body{font-family:Arial;background:#1d1b2e;color:#fff;text-align:center}canvas{width:min(90vw,512px);height:min(90vw,512px);image-rendering:pixelated;border:2px solid #8a4fff;touch-action:none;background:#fff}button,input{margin:4px;padding:8px;border-radius:8px}
 </style></head><body>
-<h2>Texture Maker 16x16</h2>
-<canvas id=c width=16 height=16></canvas>
-<div id=tools>
-<input type=color id=col value="#000000">
-<button id=eraser>Borrador</button>
-<button id=clear>Limpiar</button>
-<button id=upload>Subir</button>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<h2>Texture Maker</h2>
+<canvas id="c" width="16" height="16"></canvas><br>
+<input type="color" id="col"><button id="eraser">Borrador</button><button id="clear">Limpiar</button>
 <script>
-const c=document.getElementById('c'),x=c.getContext('2d');x.imageSmoothingEnabled=false;
-x.fillStyle='rgba(0,0,0,0)';x.fillRect(0,0,16,16);
-let erase=false,down=false;
-function draw(ev){
- let r=c.getBoundingClientRect();
- let px=Math.floor((ev.touches?ev.touches[0].clientX:ev.clientX-r.left)/r.width*16);
- let py=Math.floor((ev.touches?ev.touches[0].clientY:ev.clientY-r.top)/r.height*16);
- if(px<0||py<0||px>15||py>15)return;
- x.clearRect(px,py,1,1);
- if(!erase){x.fillStyle=col.value;x.fillRect(px,py,1,1);}
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+ctx.imageSmoothingEnabled=false;let erase=false,painting=false;
+function getPixel(e){
+ const r=c.getBoundingClientRect();
+ const cx=e.touches?e.touches[0].clientX:e.clientX;
+ const cy=e.touches?e.touches[0].clientY:e.clientY;
+ const x=Math.floor((cx-r.left)*(c.width/r.width));
+ const y=Math.floor((cy-r.top)*(c.height/r.height));
+ return {x:Math.max(0,Math.min(15,x)),y:Math.max(0,Math.min(15,y))};
 }
-['mousedown','touchstart'].forEach(e=>c.addEventListener(e,v=>{down=true;draw(v);v.preventDefault()}));
-['mousemove','touchmove'].forEach(e=>c.addEventListener(e,v=>{if(down)draw(v);v.preventDefault()}));
-window.addEventListener('mouseup',()=>down=false);window.addEventListener('touchend',()=>down=false);
+function paint(e){
+ const p=getPixel(e);
+ ctx.clearRect(p.x,p.y,1,1);
+ if(!erase){ctx.fillStyle=col.value;ctx.fillRect(p.x,p.y,1,1);}
+}
+function start(e){painting=true;paint(e);e.preventDefault();}
+function move(e){if(!painting)return;paint(e);e.preventDefault();}
+function end(){painting=false;}
+c.addEventListener('mousedown',start);
+c.addEventListener('mousemove',move);
+window.addEventListener('mouseup',end);
+c.addEventListener('touchstart',start,{passive:false});
+c.addEventListener('touchmove',move,{passive:false});
+window.addEventListener('touchend',end);
 eraser.onclick=()=>erase=!erase;
-clear.onclick=()=>x.clearRect(0,0,16,16);
-upload.onclick=async()=>{
- let n=prompt("Nombre del bloque"); if(!n)return;
- const png=await new Promise(r=>c.toBlob(r,'image/png'));
- const zip=new JSZip(); zip.file("texture.png",png);
- const blob=await zip.generateAsync({type:'blob'});
- const file=new File([blob],"texture.zip",{type:"application/zip"});
- if(navigator.canShare&&navigator.canShare({files:[file]})){
-   try{await navigator.share({title:n,files:[file]});return;}catch(e){}
- }
- const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='texture.zip';a.click();
-};
+clear.onclick=()=>ctx.clearRect(0,0,16,16);
 </script></body></html>
