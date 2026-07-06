@@ -1,35 +1,483 @@
-<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-body{font-family:Arial;background:#1d1b2e;color:#fff;text-align:center}canvas{width:min(90vw,512px);height:min(90vw,512px);image-rendering:pixelated;border:2px solid #8a4fff;touch-action:none;background:#fff}button,input{margin:4px;padding:8px;border-radius:8px}
-</style></head><body>
-<h2>Texture Maker</h2>
-<canvas id="c" width="16" height="16"></canvas><br>
-<input type="color" id="col"><button id="eraser">Borrador</button><button id="clear">Limpiar</button>
-<script>
-const c=document.getElementById('c'),ctx=c.getContext('2d');
-ctx.imageSmoothingEnabled=false;let erase=false,painting=false;
-function getPixel(e){
- const r=c.getBoundingClientRect();
- const cx=e.touches?e.touches[0].clientX:e.clientX;
- const cy=e.touches?e.touches[0].clientY:e.clientY;
- const x=Math.floor((cx-r.left)*(c.width/r.width));
- const y=Math.floor((cy-r.top)*(c.height/r.height));
- return {x:Math.max(0,Math.min(15,x)),y:Math.max(0,Math.min(15,y))};
-}
-function paint(e){
- const p=getPixel(e);
- ctx.clearRect(p.x,p.y,1,1);
- if(!erase){ctx.fillStyle=col.value;ctx.fillRect(p.x,p.y,1,1);}
-}
-function start(e){painting=true;paint(e);e.preventDefault();}
-function move(e){if(!painting)return;paint(e);e.preventDefault();}
-function end(){painting=false;}
-c.addEventListener('mousedown',start);
-c.addEventListener('mousemove',move);
-window.addEventListener('mouseup',end);
-c.addEventListener('touchstart',start,{passive:false});
-c.addEventListener('touchmove',move,{passive:false});
-window.addEventListener('touchend',end);
-eraser.onclick=()=>erase=!erase;
-clear.onclick=()=>ctx.clearRect(0,0,16,16);
-</script></body></html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Minecraft 16x16 Texture Maker</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --panel-color: #2d2d2d;
+            --accent-color: #5c8e32; /* Verde Minecraft */
+            --accent-hover: #4d7a27;
+            --text-color: #ffffff;
+            --border-color: #444444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+            touch-action: manipulation;
+        }
+
+        header {
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            color: #8be9fd;
+            text-shadow: 2px 2px #000;
+        }
+
+        /* Contenedor Principal */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 450px;
+            gap: 12px;
+        }
+
+        /* El Lienzo / Canvas */
+        .canvas-container {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background-color: #3a3a3a;
+            border: 4px solid #000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        #pixel-canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            cursor: crosshair;
+            display: block;
+        }
+
+        /* Panel de Herramientas */
+        .panel {
+            background-color: var(--panel-color);
+            width: 100%;
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .tool-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        button {
+            background-color: #3f3f3f;
+            color: var(--text-color);
+            border: 2px solid #555;
+            padding: 12px 6px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        button.active {
+            background-color: var(--accent-color);
+            border-color: #fff;
+            box-shadow: 0 0 8px var(--accent-color);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        /* Selector de Color Mejorado para Celular */
+        .color-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            background: #222;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .color-picker-wrapper {
+            position: relative;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #fff;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        input[type="color"] {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 80px;
+            height: 80px;
+            cursor: pointer;
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: 1px solid #fff;
+            cursor: pointer;
+        }
+
+        /* Ajustes de la Herramienta de Texturizado (Ruido) */
+        .slider-box {
+            background: #222;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 8px;
+            display: none; /* Se muestra solo si se activa "Texturizar" */
+        }
+
+        .slider-box.visible {
+            display: block;
+        }
+
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .slider-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .slider-row label {
+            font-size: 0.75rem;
+            color: #aaa;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-color);
+        }
+
+        /* Botón de descarga */
+        .download-btn {
+            grid-column: span 4;
+            background-color: #2572e6;
+            border-color: #3b82f6;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>MC Texture Maker 16x16</h1>
+    </header>
+
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="pixel-canvas" width="16" height="16"></canvas>
+        </div>
+
+        <div class="panel">
+            
+            <div class="color-section">
+                <div class="color-picker-wrapper">
+                    <input type="color" id="color-picker" value="#5c8e32">
+                </div>
+                <div class="color-palette">
+                    <div class="swatch" style="background: #ff0000;"></div>
+                    <div class="swatch" style="background: #00ff00;"></div>
+                    <div class="swatch" style="background: #0000ff;"></div>
+                    <div class="swatch" style="background: #ffff00;"></div>
+                    <div class="swatch" style="background: #ffffff;"></div>
+                    <div class="swatch" style="background: #000000;"></div>
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <button id="tool-pencil" class="active">✏️<br>Lápiz</button>
+                <button id="tool-eraser">🧼<br>Borrar</button>
+                <button id="tool-picker">🧪<br>Copiar</button>
+                <button id="tool-texture">🎨<br>Textura</button>
+            </div>
+
+            <div id="texture-options" class="slider-box">
+                <div class="slider-row">
+                    <label>Fuerza del efecto: <span id="val-strength">30</span></label>
+                    <input type="range" id="texture-strength" min="5" max="100" value="30">
+                </div>
+                <div class="slider-row">
+                    <label>Opacidad / Mezcla: <span id="val-opacity">50%</span></label>
+                    <input type="range" id="texture-opacity" min="10" max="100" value="50">
+                </div>
+            </div>
+
+            <div class="tool-group" style="margin-top: 8px; margin-bottom: 0;">
+                <button id="btn-clear" style="grid-column: span 2; background: #6b21a8; border-color: #a855f7;">🗑️ Limpiar</button>
+                <button id="btn-download" class="download-btn" style="grid-column: span 2;">💾 Guardar PNG</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('pixel-canvas');
+        const ctx = canvas.getContext('2d');
+        const colorPicker = document.getElementById('color-picker');
+        const textureOptions = document.getElementById('texture-options');
+        
+        // Sliders
+        const sliderStrength = document.getElementById('texture-strength');
+        const sliderOpacity = document.getElementById('texture-opacity');
+        const valStrength = document.getElementById('val-strength');
+        const valOpacity = document.getElementById('val-opacity');
+
+        // Estados de la app
+        let currentTool = 'pencil'; // pencil, eraser, picker, texture
+        let isDrawing = false;
+        let currentColor = '#5c8e32';
+        
+        // Matriz interna para guardar los colores del lienzo de 16x16 (RGBA)
+        let pixelGrid = Array(16).fill(null).map(() => Array(16).fill(null));
+
+        // Inicializar Lienzo Vacío con cuadrícula transparente visible
+        function initCanvas() {
+            ctx.clearRect(0, 0, 16, 16);
+            for(let x=0; x<16; x++) {
+                for(let y=0; y<16; y++) {
+                    pixelGrid[x][y] = null; // Transparente por defecto
+                }
+            }
+            redrawCanvas();
+        }
+
+        // Redibuja todo basándose en la matriz pixelGrid
+        function redrawCanvas() {
+            ctx.clearRect(0, 0, 16, 16);
+            
+            // Fondo estilo tablero de ajedrez sutil para notar la transparencia
+            for (let x = 0; x < 16; x++) {
+                for (let y = 0; y < 16; y++) {
+                    if (pixelGrid[x][y]) {
+                        ctx.fillStyle = pixelGrid[x][y];
+                        ctx.fillRect(x, y, 1, 1);
+                    } else {
+                        // Cuadrícula de transparencia de fondo
+                        ctx.fillStyle = (x + y) % 2 === 0 ? '#343434' : '#3c3c3c';
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+            }
+        }
+
+        // Convertir HEX a RGB
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        // Convertir RGB a HEX (para el cuentagotas)
+        function rgbToHex(r, g, b) {
+            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+
+        // Función mágica para generar el "Efecto Texturizado (Ruido)"
+        function generateTextureColor(baseHex) {
+            const rgb = hexToRgb(baseHex);
+            if (!rgb) return baseHex;
+
+            const strength = parseInt(sliderStrength.value);
+            const opacity = parseInt(sliderOpacity.value) / 100;
+
+            // Variación aleatoria basada en la fuerza
+            const offset = (Math.random() * strength * 2) - strength;
+
+            // Aplicamos la variación y la mezclamos según la opacidad elegida
+            let r = Math.min(255, Math.max(0, rgb.r + offset));
+            let g = Math.min(255, Math.max(0, rgb.g + offset));
+            let b = Math.min(255, Math.max(0, rgb.b + offset));
+
+            // Interpolación lineal entre color original y color con ruido usando la opacidad
+            r = Math.round(rgb.r + (r - rgb.r) * opacity);
+            g = Math.round(rgb.g + (g - rgb.g) * opacity);
+            b = Math.round(rgb.b + (b - rgb.b) * opacity);
+
+            return rgbToHex(r, g, b);
+        }
+
+        // Manejar la acción de pintar en las coordenadas
+        function handleAction(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            
+            // Calcular a qué pixel exacto (0-15) corresponde la presión en pantalla
+            const x = Math.floor(((clientX - rect.left) / rect.width) * 16);
+            const y = Math.floor(((clientY - rect.top) / rect.height) * 16);
+
+            if (x >= 0 && x < 16 && y >= 0 && y < 16) {
+                if (currentTool === 'pencil') {
+                    pixelGrid[x][y] = currentColor;
+                } else if (currentTool === 'eraser') {
+                    pixelGrid[x][y] = null;
+                } else if (currentTool === 'texture') {
+                    pixelGrid[x][y] = generateTextureColor(currentColor);
+                } else if (currentTool === 'picker') {
+                    // Cuentagotas / Copiar color
+                    if (pixelGrid[x][y]) {
+                        currentColor = pixelGrid[x][y];
+                        colorPicker.value = currentColor;
+                        // Regresa automáticamente al lápiz tras copiar para comodidad del usuario
+                        switchTool('pencil');
+                    }
+                }
+                redrawCanvas();
+            }
+        }
+
+        // Eventos de Mouse y Touch (Soportando arrastrar el dedo en celulares)
+        function setupDrawEvents() {
+            const startDraw = (e) => {
+                isDrawing = true;
+                const point = e.touches ? e.touches[0] : e;
+                handleAction(point.clientX, point.clientY);
+            };
+
+            const moveDraw = (e) => {
+                if (!isDrawing) return;
+                // Previene que la pantalla del celular se mueva o haga scroll al pintar
+                if(e.cancelable) e.preventDefault(); 
+                const point = e.touches ? e.touches[0] : e;
+                handleAction(point.clientX, point.clientY);
+            };
+
+            const stopDraw = () => { isDrawing = false; };
+
+            // Mouse
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', moveDraw);
+            window.addEventListener('mouseup', stopDraw);
+
+            // Touch (Móviles)
+            canvas.addEventListener('touchstart', startDraw, { passive: false });
+            canvas.addEventListener('touchmove', moveDraw, { passive: false });
+            canvas.addEventListener('touchend', stopDraw);
+        }
+
+        // Cambiar de herramientas de manera fluida
+        function switchTool(toolName) {
+            currentTool = toolName;
+            document.querySelectorAll('.tool-group button').forEach(btn => btn.classList.remove('active'));
+            
+            if (toolName === 'pencil') document.getElementById('tool-pencil').classList.add('active');
+            if (toolName === 'eraser') document.getElementById('tool-eraser').classList.add('active');
+            if (toolName === 'picker') document.getElementById('tool-picker').classList.add('active');
+            
+            if (toolName === 'texture') {
+                document.getElementById('tool-texture').classList.add('active');
+                textureOptions.classList.add('visible');
+            } else {
+                textureOptions.classList.remove('visible');
+            }
+        }
+
+        // Listeners para las herramientas
+        document.getElementById('tool-pencil').addEventListener('click', () => switchTool('pencil'));
+        document.getElementById('tool-eraser').addEventListener('click', () => switchTool('eraser'));
+        document.getElementById('tool-picker').addEventListener('click', () => switchTool('picker'));
+        document.getElementById('tool-texture').addEventListener('click', () => switchTool('texture'));
+
+        // Actualizar textos dinámicos de los Sliders
+        sliderStrength.addEventListener('input', (e) => valStrength.textContent = e.target.value);
+        sliderOpacity.addEventListener('input', (e) => valOpacity.textContent = e.target.value + '%');
+
+        // Color Picker e Historial de paleta rapida
+        colorPicker.addEventListener('input', (e) => currentColor = e.target.value);
+        document.querySelectorAll('.swatch').forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                currentColor = swatch.style.backgroundColor;
+                // Convertir rgb plano a hex para el input color
+                ctx.fillStyle = currentColor;
+                colorPicker.value = ctx.fillStyle;
+            });
+        });
+
+        // Boton Limpiar Lienzo
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            if(confirm('¿Seguro que quieres borrar toda tu textura?')) {
+                initCanvas();
+            }
+        });
+
+        // Descargar la textura lista para importar a Minecraft (Exporta un PNG real de 16x16 píxeles)
+        document.getElementById('btn-download').addEventListener('click', () => {
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = 16;
+            exportCanvas.height = 16;
+            const exportCtx = exportCanvas.getContext('2d');
+
+            // Solo pintar píxeles reales (manteniendo transparencia donde no hay nada)
+            for (let x = 0; x < 16; x++) {
+                for (let y = 0; y < 16; y++) {
+                    if (pixelGrid[x][y]) {
+                        exportCtx.fillStyle = pixelGrid[x][y];
+                        exportCtx.fillRect(x, y, 1, 1);
+                    }
+                }
+            }
+
+            const link = document.createElement('a');
+            link.download = 'texture_16x16.png';
+            link.href = exportCanvas.toDataURL('image/png');
+            link.click();
+        });
+
+        // Inicialización al cargar la página
+        initCanvas();
+        setupDrawEvents();
+    </script>
+</body>
+</html>
