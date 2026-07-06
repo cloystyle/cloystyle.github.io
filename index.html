@@ -1,66 +1,47 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cloy Style</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="templatemo-621-luminary-style.css">
-</head>
-<body>
-
-<div class="atmosphere"></div>
-
-<nav class="top-nav">
-    <a href="#" class="nav-brand">Cloy<span>Style</span></a>
-</nav>
-
-<main class="main">
-
-<section class="hero">
-
-<div class="hero-grid"></div>
-
-<h1>Cloy<br><em>Style</em></h1>
-
-<p class="hero-sub">
-Recursos, documentos y proyectos organizados en un solo lugar.
-</p>
-
-<div class="hero-ctas">
-    <a href="presentaciones.html" class="btn-primary">
-        Presentaciones
-    </a>
-
-    <a href="tareas.html" class="btn-secondary">
-        Tareas
-    </a>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Texture Editor</title>
+<style>
+body{margin:0;background:#1d1b2e;color:#fff;font-family:Arial;display:flex;flex-direction:column;align-items:center}
+#tools{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:10px}
+button,input{padding:8px;border-radius:8px;border:none}
+canvas{image-rendering:pixelated;width:min(90vw,512px);height:min(90vw,512px);border:2px solid #8a4fff;background:#fff;touch-action:none}
+</style></head><body>
+<h2>Texture Maker 16x16</h2>
+<canvas id=c width=16 height=16></canvas>
+<div id=tools>
+<input type=color id=col value="#000000">
+<button id=eraser>Borrador</button>
+<button id=clear>Limpiar</button>
+<button id=upload>Subir</button>
 </div>
-
-</section>
-
-<section class="section section-center">
-
-<p class="section-tag">Sobre el proyecto</p>
-
-<h2 class="section-title">
-Simple, moderno y <strong>organizado</strong>
-</h2>
-
-<p class="section-body">
-Cloy Style es una plataforma diseñada para almacenar y compartir
-presentaciones, tareas y recursos de forma sencilla.
-Todo el contenido está organizado para facilitar el acceso
-desde cualquier dispositivo.
-</p>
-
-</section>
-
-</main>
-
-<script src="templatemo-621-luminary-script.js"></script>
-
-</body>
-</html>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d');x.imageSmoothingEnabled=false;
+x.fillStyle='rgba(0,0,0,0)';x.fillRect(0,0,16,16);
+let erase=false,down=false;
+function draw(ev){
+ let r=c.getBoundingClientRect();
+ let px=Math.floor((ev.touches?ev.touches[0].clientX:ev.clientX-r.left)/r.width*16);
+ let py=Math.floor((ev.touches?ev.touches[0].clientY:ev.clientY-r.top)/r.height*16);
+ if(px<0||py<0||px>15||py>15)return;
+ x.clearRect(px,py,1,1);
+ if(!erase){x.fillStyle=col.value;x.fillRect(px,py,1,1);}
+}
+['mousedown','touchstart'].forEach(e=>c.addEventListener(e,v=>{down=true;draw(v);v.preventDefault()}));
+['mousemove','touchmove'].forEach(e=>c.addEventListener(e,v=>{if(down)draw(v);v.preventDefault()}));
+window.addEventListener('mouseup',()=>down=false);window.addEventListener('touchend',()=>down=false);
+eraser.onclick=()=>erase=!erase;
+clear.onclick=()=>x.clearRect(0,0,16,16);
+upload.onclick=async()=>{
+ let n=prompt("Nombre del bloque"); if(!n)return;
+ const png=await new Promise(r=>c.toBlob(r,'image/png'));
+ const zip=new JSZip(); zip.file("texture.png",png);
+ const blob=await zip.generateAsync({type:'blob'});
+ const file=new File([blob],"texture.zip",{type:"application/zip"});
+ if(navigator.canShare&&navigator.canShare({files:[file]})){
+   try{await navigator.share({title:n,files:[file]});return;}catch(e){}
+ }
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='texture.zip';a.click();
+};
+</script></body></html>
