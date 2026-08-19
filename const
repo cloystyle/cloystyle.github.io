@@ -634,6 +634,44 @@
 
                 </button>
 
+                <button class="document-card" id="socialStudiesNoAnswersButton">
+
+    <div class="document-preview">
+        <img
+            src="images/estudios-sociales-sin-respuestas.jpg"
+            alt="Vista previa de Estudios Sociales sin respuestas"
+        >
+    </div>
+
+    <div class="document-icon">
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+        >
+            <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/>
+            <path d="M4 4.5v17"/>
+            <path d="M8 6h8"/>
+            <path d="M8 10h8"/>
+        </svg>
+    </div>
+
+    <div class="document-name">
+        Estudios Sociales (31 Paginas sin respuestas)
+    </div>
+
+    <div class="document-description">
+        Documento de Estudios Sociales sin las respuestas.
+    </div>
+
+    <div class="document-arrow">
+        Ver documento
+        <span>→</span>
+    </div>
+
+</button>
+
             </div>
 
         </section>
@@ -747,10 +785,164 @@
         </div>
 
     </div>
+<!-- MODAL ESTUDIOS SOCIALES SIN RESPUESTAS -->
 
+<div
+    class="modal-overlay"
+    id="documentModalNoAnswers"
+    aria-hidden="true"
+>
+
+    <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitleNoAnswers"
+    >
+
+        <div class="modal-header">
+
+            <div>
+                <div class="modal-title" id="modalTitleNoAnswers">
+                    Estudios Sociales
+                </div>
+
+                <div class="modal-subtitle">
+                    31 Paginas sin respuestas
+                </div>
+            </div>
+
+            <button
+                class="close-button"
+                id="closeModalNoAnswers"
+                aria-label="Cerrar"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <path d="M6 6l12 12"/>
+                    <path d="M18 6L6 18"/>
+                </svg>
+            </button>
+
+        </div>
+
+
+        <div class="modal-body">
+
+            <div class="modal-preview">
+                <img
+                    src="images/estudios-sociales-sin-respuestas.jpg"
+                    alt="Vista previa de Estudios Sociales sin respuestas"
+                >
+            </div>
+
+
+            <div class="warning">
+
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <path d="M12 9v4"/>
+                    <path d="M12 17h.01"/>
+                    <path d="M10.3 3.7L2.6 17a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.7a2 2 0 0 0-3.4 0z"/>
+                </svg>
+
+                <span>
+                    Puede durar mucho cargando, solo espera
+                </span>
+
+            </div>
+
+
+            <a
+                class="open-button"
+                href="https://smallpdf.com/file#s=ff07c506-7383-44bd-92e7-14352a19816f"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Abrir
+
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <path d="M14 3h7v7"/>
+                    <path d="M10 14L21 3"/>
+                    <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/>
+                </svg>
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
 
     <!-- JAVASCRIPT -->
     <script>
+const documentButtonNoAnswers =
+    document.getElementById("socialStudiesNoAnswersButton");
+
+const modalNoAnswers =
+    document.getElementById("documentModalNoAnswers");
+
+const closeButtonNoAnswers =
+    document.getElementById("closeModalNoAnswers");
+
+
+function openModalNoAnswers() {
+    modalNoAnswers.classList.add("active");
+    modalNoAnswers.setAttribute("aria-hidden", "false");
+
+    document.body.style.overflow = "hidden";
+}
+
+
+function closeModalNoAnswers() {
+    modalNoAnswers.classList.remove("active");
+    modalNoAnswers.setAttribute("aria-hidden", "true");
+
+    document.body.style.overflow = "";
+}
+
+
+documentButtonNoAnswers.addEventListener(
+    "click",
+    openModalNoAnswers
+);
+
+closeButtonNoAnswers.addEventListener(
+    "click",
+    closeModalNoAnswers
+);
+
+
+modalNoAnswers.addEventListener("click", function(event) {
+
+    if (event.target === modalNoAnswers) {
+        closeModalNoAnswers();
+    }
+
+});
+
+
+document.addEventListener("keydown", function(event) {
+
+    if (event.key === "Escape") {
+        closeModalNoAnswers();
+    }
+
+});
+        
         const documentButton =
             document.getElementById("socialStudiesButton");
 
